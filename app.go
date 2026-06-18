@@ -18,7 +18,8 @@ type Consumer interface {
 type Handler func(ctx context.Context, message message.Message)
 
 type App struct {
-	wg sync.WaitGroup
+	ctx context.Context
+	wg  sync.WaitGroup
 
 	logger app.Logger
 
@@ -42,31 +43,37 @@ func New(logger app.Logger, consumers []Consumer, handlers map[message.Queue]Han
 }
 
 func (a *App) Run(ctx context.Context) error {
-	for _, consumer := range a.consumers {
-		for queue, handler := range a.handlers {
-			a.wg.Add(1)
-			go a.consume(ctx, consumer, queue, handler)
-		}
-	}
+	a.ctx = ctx
+
+	a.setUp()
 
 	a.wg.Wait()
 
 	return nil
 }
 
-func (a *App) consume(ctx context.Context, consumer Consumer, queue message.Queue, handler Handler) {
+func (a *App) setUp() {
+	for _, consumer := range a.consumers {
+		for queue, handler := range a.handlers {
+			a.wg.Add(1)
+			go a.consume(consumer, queue, handler)
+		}
+	}
+}
+
+func (a *App) consume(consumer Consumer, queue message.Queue, handler Handler) {
 	defer a.wg.Done()
 
-	ch, err := consumer.Consume(ctx, queue)
+	ch, err := consumer.Consume(a.ctx, queue)
 	if err != nil {
-		a.logger.Error(ctx, err, nil)
+		a.logger.Error(a.ctx, err, nil)
 		return
 	}
 
-	a.logger.Log(ctx, fmt.Sprintf("start %s consumer for queue %s", consumer.GetName(), queue), nil)
-	defer a.logger.Log(ctx, fmt.Sprintf("stop %s consumer for queue %s", consumer.GetName(), queue), nil)
+	a.logger.Log(a.ctx, fmt.Sprintf("start %s consumer for queue %s", consumer.GetName(), queue), nil)
+	defer a.logger.Log(a.ctx, fmt.Sprintf("stop %s consumer for queue %s", consumer.GetName(), queue), nil)
 
 	for message := range ch {
-		handler(ctx, message)
+		handler(a.ctx, message)
 	}
 }
