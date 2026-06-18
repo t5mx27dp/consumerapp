@@ -28,8 +28,9 @@ type App struct {
 	handlers map[message.Queue]Handler
 }
 
-func New(logger app.Logger, consumers []Consumer, handlers map[message.Queue]Handler, opts ...Option) *App {
+func New(ctx context.Context, logger app.Logger, consumers []Consumer, handlers map[message.Queue]Handler, opts ...Option) *App {
 	a := &App{
+		ctx:       ctx,
 		logger:    logger,
 		consumers: consumers,
 		handlers:  handlers,
@@ -42,17 +43,13 @@ func New(logger app.Logger, consumers []Consumer, handlers map[message.Queue]Han
 	return a
 }
 
-func (a *App) Run(ctx context.Context) error {
-	a.ctx = ctx
-
-	a.setUp()
-
+func (a *App) Run() error {
+	a.run()
 	a.wg.Wait()
-
 	return nil
 }
 
-func (a *App) setUp() {
+func (a *App) run() {
 	for _, consumer := range a.consumers {
 		for queue, handler := range a.handlers {
 			a.wg.Add(1)
