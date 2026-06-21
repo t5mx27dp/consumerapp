@@ -36,7 +36,7 @@ func (m *Message) Requeue() error {
 }
 
 const (
-	Test message.Queue = "test"
+	Hello message.Queue = "hello"
 )
 
 func TestApp(t *testing.T) {
@@ -44,7 +44,8 @@ func TestApp(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		ch := make(chan message.Message)
+		var rwch = make(chan message.Message)
+		var rch <-chan message.Message = rwch
 
 		logger := appmock.NewLogger(t)
 		consumer := consumerappmock.NewConsumer(t)
@@ -52,24 +53,24 @@ func TestApp(t *testing.T) {
 		logger.On("Log", mock.Anything, mock.Anything, mock.Anything).Return()
 
 		consumer.On("GetName").Return("consumer")
-		consumer.On("Consume", mock.Anything, mock.Anything).Return(ch, nil)
+		consumer.On("Consume", mock.Anything, mock.Anything).Return(rch, nil)
 
 		consumers := []consumerapp.Consumer{consumer}
 
 		handlers := map[message.Queue]consumerapp.Handler{
-			Test: func(ctx context.Context, message message.Message) {
-				require.Equal(t, "test", string(message.GetBody()))
-
-				close(ch)
+			Hello: func(ctx context.Context, message message.Message) {
+				require.Equal(t, "hello", string(message.GetBody()))
 			},
 		}
 
 		app := consumerapp.New(ctx, logger, consumers, handlers)
 
 		go func() {
-			ch <- &Message{
-				Body: []byte("test"),
+			rwch <- &Message{
+				Body: []byte("hello"),
 			}
+
+			close(rwch)
 		}()
 
 		err := app.Run()

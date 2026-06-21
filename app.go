@@ -12,7 +12,7 @@ import (
 
 type Consumer interface {
 	GetName() string
-	Consume(ctx context.Context, queue message.Queue) (chan message.Message, error)
+	Consume(ctx context.Context, queue message.Queue) (<-chan message.Message, error)
 }
 
 type Handler func(ctx context.Context, message message.Message)

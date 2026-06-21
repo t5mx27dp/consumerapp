@@ -39,23 +39,23 @@ func (_m *Consumer) EXPECT() *Consumer_Expecter {
 }
 
 // Consume provides a mock function for the type Consumer
-func (_mock *Consumer) Consume(ctx context.Context, queue message.Queue) (chan message.Message, error) {
+func (_mock *Consumer) Consume(ctx context.Context, queue message.Queue) (<-chan message.Message, error) {
 	ret := _mock.Called(ctx, queue)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Consume")
 	}
 
-	var r0 chan message.Message
+	var r0 <-chan message.Message
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, message.Queue) (chan message.Message, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, message.Queue) (<-chan message.Message, error)); ok {
 		return returnFunc(ctx, queue)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, message.Queue) chan message.Message); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, message.Queue) <-chan message.Message); ok {
 		r0 = returnFunc(ctx, queue)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan message.Message)
+			r0 = ret.Get(0).(<-chan message.Message)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, message.Queue) error); ok {
@@ -96,12 +96,12 @@ func (_c *Consumer_Consume_Call) Run(run func(ctx context.Context, queue message
 	return _c
 }
 
-func (_c *Consumer_Consume_Call) Return(messageCh chan message.Message, err error) *Consumer_Consume_Call {
+func (_c *Consumer_Consume_Call) Return(messageCh <-chan message.Message, err error) *Consumer_Consume_Call {
 	_c.Call.Return(messageCh, err)
 	return _c
 }
 
-func (_c *Consumer_Consume_Call) RunAndReturn(run func(ctx context.Context, queue message.Queue) (chan message.Message, error)) *Consumer_Consume_Call {
+func (_c *Consumer_Consume_Call) RunAndReturn(run func(ctx context.Context, queue message.Queue) (<-chan message.Message, error)) *Consumer_Consume_Call {
 	_c.Call.Return(run)
 	return _c
 }
